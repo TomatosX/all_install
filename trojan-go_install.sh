@@ -394,24 +394,27 @@ uninstall_nginx() {
   fi
 }
 download_install() {
+  wget https://api.github.com/repos/p4gefau1t/trojan-go/releases/latest
+  latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
+  rm latest
   [[ ! -d ${trojan_dir} ]] && mkdir ${trojan_dir}
   [[ ! -d ${trojan_bin_dir} ]] && mkdir ${trojan_bin_dir}
   if [[ ! -f ${trojan_bin_dir}/trojan-go ]]; then
     case ${bit} in
     "x86_64")
-      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-amd64.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v0.10.6/trojan-go-linux-amd64.zip"
+      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-amd64.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip"
       sucess_or_fail "trojan-go下载"
       unzip -o -d ${trojan_bin_dir} ${trojan_bin_dir}/trojan-go-linux-amd64.zip
       sucess_or_fail "trojan-go解压"
       ;;
     "i386" | "i686")
-      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-386.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v0.10.6/trojan-go-linux-386.zip"
+      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-386.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-386.zip"
       sucess_or_fail "trojan-go下载"
       unzip -o -d ${trojan_bin_dir} ${trojan_bin_dir}/trojan-go-linux-386.zip
       sucess_or_fail "trojan-go解压"
       ;;
     "armv7l")
-      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-armv7.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v0.10.6/trojan-go-linux-armv7.zip"
+      wget --no-check-certificate -O ${trojan_bin_dir}/trojan-go-linux-armv7.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-armv7.zip"
       sucess_or_fail "trojan-go下载"
       unzip -o -d ${trojan_bin_dir} ${trojan_bin_dir}/trojan-go-linux-armv7.zip
       sucess_or_fail "trojan-go解压"
