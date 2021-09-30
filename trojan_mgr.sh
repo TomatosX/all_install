@@ -176,8 +176,10 @@ open_mux() {
         read -rp "$(echo -e "${Info}是否开启（Y/n）？（默认：n）")" Yn
         case ${Yn} in
         [yY][eE][sS] | [yY])
-            sed -i "38c    \"enabled\": true," ${trojan_conf_file}
-            sed -i "38c    \"enabled\": true," ${web_dir}/"${uuid}".json
+            sed -i -e '/mux/{n;d}' ${trojan_conf_file}
+            sed -i '/mux/a\        \"enabled\": true,' ${trojan_conf_file}
+            sed -i -e '/mux/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i '/mux/a\        \"enabled\": true,' ${web_dir}/"${uuid}".json
             mux_status="开启"
             ;;
         *)
@@ -218,8 +220,10 @@ close_mux() {
         read -rp "$(echo -e "${Info}是否禁用（Y/n）？（默认：n）")" Yn
         case ${Yn} in
         [yY][eE][sS] | [yY])
-            sed -i "38c    \"enabled\": true," ${trojan_conf_file}
-            sed -i "38c    \"enabled\": true," ${web_dir}/"${uuid}".json
+            sed -i -e '/mux/{n;d}' ${trojan_conf_file}
+            sed -i '/mux/a\        \"enabled\": false,' ${trojan_conf_file}
+            sed -i -e '/mux/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i '/mux/a\        \"enabled\": false,' ${web_dir}/"${uuid}".json
             mux_status="关闭"
             ;;
         *)
