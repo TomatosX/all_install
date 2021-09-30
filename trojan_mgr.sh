@@ -43,87 +43,6 @@ nginx_version="1.18.0"
 openssl_version="1.1.1g"
 jemalloc_version="5.2.1"
 old_config_status="off"
-check_sys() {
-    if [[ -f /etc/redhat-release ]]; then
-        release="centos"
-    elif cat /etc/issue | grep -q -E -i "debian"; then
-        release="debian"
-    elif cat /etc/issue | grep -q -E -i "ubuntu"; then
-        release="ubuntu"
-    elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
-        release="centos"
-    elif cat /proc/version | grep -q -E -i "debian"; then
-        release="debian"
-    elif cat /proc/version | grep -q -E -i "ubuntu"; then
-        release="ubuntu"
-    elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
-        release="centos"
-    fi
-    bit=$(uname -m)
-}
-sucess_or_fail() {
-    if [[ 0 -eq $? ]]; then
-        echo -e "${Info} ${GreenBG} $1 完成 ${Font}"
-        sleep 1
-    else
-        echo -e "${Error} ${GreenBG}$1 失败${Font}"
-        exit 1
-    fi
-}
-GCE_debian10() {
-    echo -e "${Tip}${RedBG}因为谷歌云的debian10抽风，所以需要确认您当前是否是谷歌云的debian10系统吗（Y/n）？"
-    echo -e "${Tip}${RedBG}只有谷歌云的debian10系统才填y，其他都填n。如果填错，将直接导致您后面无法科学上网（Y/n）(默认：n)${NO_COLOR}"
-    read -rp "请输入:" Yn
-    [[ -z ${Yn} ]] && Yn="n"
-    case ${Yn} in
-    [yY][eE][sS] | [yY])
-        is_debian10="y"
-        ;;
-    *) ;;
-
-    esac
-}
-get_ip() {
-    local_ip=$(curl -s https://ipinfo.io/ip)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s https://api.ip.sb/ip)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s https://api.ipify.org)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s https://ip.seeip.org)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s https://ifconfig.co/ip)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s https://api.myip.com | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}")
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s icanhazip.com)
-    [[ -z ${local_ip} ]] && ${local_ip}=$(curl -s myip.ipip.net | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}")
-    [[ -z ${local_ip} ]] && echo -e "${Error}获取不到你vps的ip地址" && exit
-}
-check_domain() {
-    read -rp "请输入您的域名(如果用Cloudflare解析域名，请点击小云彩使其变灰):" domain
-    real_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
-    while [ "${real_ip}" != "${local_ip}" ]; do
-        read -rp "本机IP和域名绑定的IP不一致，请检查域名是否解析成功,并重新输入域名:" domain
-        real_ip=$(ping ${domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
-        read -rp "我已人工确认，本机Ip和域名绑定的IP一致，继续安装（Y/n）？（默认:n）" continue_install
-        [[ -z ${continue_install} ]] && continue_install="n"
-        case ${continue_install} in
-        [yY][eE][sS] | [yY])
-            echo -e "${Tip} 继续安装"
-            break
-            ;;
-        *)
-            echo -e "${Tip} 安装终止"
-            exit 2
-            ;;
-        esac
-    done
-}
-sys_cmd() {
-    if [[ ${release} == "centos" ]]; then
-        cmd="yum"
-    else
-        cmd="apt"
-    fi
-}
-check_root() {
-    [[ $EUID != 0 ]] && echo -e "${Error} ${RedBG} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请执行命令 ${Green_background_prefix}sudo -i${Font_color_suffix} 更换ROOT账号" && exit 1
-}
 trojan_info_extraction() {
     grep "$1" ${trojan_qr_config_file} | awk -F '"' '{print $4}'
 }
@@ -153,10 +72,14 @@ open_websocket() {
         read -rp "$(echo -e "${Info}是否开启（Y/n）？（默认：n）")" Yn
         case ${Yn} in
         [yY][eE][sS] | [yY])
-            sed -i "53c    \"enabled\": true," ${trojan_conf_file}
-            sed -i "53c    \"enabled\": true," ${web_dir}/"${uuid}".json
-            sed -i "54c    \"path\": \"/trojan\"," ${trojan_conf_file}
-            sed -i "54c    \"path\": \"/trojan\"," ${web_dir}/"${uuid}".json
+            sed -i -e '/websocket/{n;d}' ${trojan_conf_file}
+            sed -i -e '/websocket/{n;d}' ${trojan_conf_file}
+            sed -i '/websocket/a\        \"path\": \"/trojan\",' ${trojan_conf_file}
+            sed -i '/websocket/a\        \"enabled\": true,' ${trojan_conf_file}
+            sed -i -e '/websocket/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i -e '/websocket/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i '/websocket/a\        \"path\": \"/trojan\",' ${web_dir}/"${uuid}".json
+            sed -i '/websocket/a\        \"enabled\": true,' ${web_dir}/"${uuid}".json
             websocket_path="/trojan"
             websocket_status="开启"
             ;;
@@ -198,10 +121,14 @@ close_websocket() {
         read -rp "$(echo -e "${Info}是否禁用（Y/n）？（默认：n）")" Yn
         case ${Yn} in
         [yY][eE][sS] | [yY])
-            sed -i "53c \"enabled\": false," ${trojan_conf_file}
-            sed -i "53c \"enabled\": false," ${web_dir}/${uuid}.json
-            sed -i "54c    \"path\": \"\"," ${trojan_conf_file}
-            sed -i "54c    \"path\": \"\"," ${web_dir}/"${uuid}".json
+            sed -i -e '/websocket/{n;d}' ${trojan_conf_file}
+            sed -i -e '/websocket/{n;d}' ${trojan_conf_file}
+            sed -i '/websocket/a\        \"path\": \"\",' ${trojan_conf_file}
+            sed -i '/websocket/a\        \"enabled\": false,' ${trojan_conf_file}
+            sed -i -e '/websocket/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i -e '/websocket/{n;d}' ${web_dir}/"${uuid}".json
+            sed -i '/websocket/a\        \"path\": \"\",' ${web_dir}/"${uuid}".json
+            sed -i '/websocket/a\        \"enabled\": false,' ${web_dir}/"${uuid}".json
             websocket_status="关闭"
             websocket_path=""
             ;;
@@ -331,6 +258,7 @@ update_trojan_go() {
     latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
     rm latest
     wget --no-check-certificate -O /etc/trojan/bin/trojan-go-linux-amd64.zip "https://github.com/p4gefau1t/trojan-go/releases/download/v${latest_version}/trojan-go-linux-amd64.zip"
+    echo -e "${GREEN}开始安装 v${latest_version}${NO_COLOR}"
     unzip -o -d /etc/trojan/bin /etc/trojan/bin/trojan-go-linux-amd64.zip
     rm /etc/trojan/bin/trojan-go-linux-amd64.zip
     systemctl start trojan.service
