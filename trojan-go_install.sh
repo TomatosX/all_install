@@ -231,8 +231,8 @@ tls_generate_script_install() {
   sucess_or_fail "安装 tls 证书生成脚本依赖"
 
 #  curl https://get.acme.sh | sh
-  random_email_prefix=openssl rand -base64 16 | md5sum | cut -c1-16
-  random_email=${random_email_prefix}@trojango.com
+  random_email_prefix=$(openssl rand -base64 16 | md5sum | cut -c1-16)
+  random_email="${random_email_prefix}@trojango.com"
   echo -e "${Info}随机邮箱为: ${random_email}"
   curl https://get.acme.sh | sh -s email=${random_email}
   sucess_or_fail "安装 tls 证书生成脚本"
