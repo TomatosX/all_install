@@ -225,11 +225,16 @@ tls_generate_script_install() {
   if [[ "${cmd}" == "yum" ]]; then
     ${cmd} install socat nc -y
   else
-    ${cmd} install socat netcat -y
+    apt-get update && apt-get -y install socat
+#    ${cmd} install socat netcat -y
   fi
   sucess_or_fail "安装 tls 证书生成脚本依赖"
 
-  curl https://get.acme.sh | sh
+#  curl https://get.acme.sh | sh
+  random_email_prefix=openssl rand -base64 16 | md5sum | cut -c1-16
+  random_email=${random_email_prefix}@trojango.com
+  echo -e "${Info}随机邮箱为: ${random_email}"
+  curl https://get.acme.sh | sh -s email=${random_email}
   sucess_or_fail "安装 tls 证书生成脚本"
   source ~/.bashrc
 }
@@ -839,21 +844,21 @@ install_caddy() {
   if [[ ! -f ${caddy_bin_dir}/caddy ]]; then
     case ${bit} in
     "x86_64")
-      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_amd64.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_amd64.tar.gz"
+      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_amd64.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.4.5/caddy_2.4.5_linux_amd64.tar.gz"
       sucess_or_fail "caddy下载"
       tar -zxvf ${caddy_bin_dir}/caddy_2.1.1_linux_amd64.tar.gz -C ${caddy_bin_dir}
       sucess_or_fail "caddy解压"
       rm -f ${caddy_bin_dir}/caddy_2.1.1_linux_amd64.tar.gz
       ;;
     "armv6")
-      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_armv6.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_armv6.tar.gz"
+      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_armv6.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.4.5/caddy_2.4.5_linux_armv6.tar.gz"
       sucess_or_fail "caddy下载"
       tar -zxvf ${caddy_bin_dir}/caddy_2.1.1_linux_armv6.tar.gz -C ${caddy_bin_dir}
       sucess_or_fail "caddy解压"
       rm -f ${caddy_bin_dir}/caddy_2.1.1_linux_armv6.tar.gz
       ;;
     "armv7l")
-      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_armv7.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_armv7.tar.gz"
+      wget --no-check-certificate -O ${caddy_bin_dir}/caddy_2.1.1_linux_armv7.tar.gz "https://github.com/caddyserver/caddy/releases/download/v2.4.5/caddy_2.4.5_linux_armv7.tar.gz"
       sucess_or_fail "caddy下载"
       tar -zxvf ${caddy_bin_dir}/caddy_2.1.1_linux_armv7.tar.gz -C ${caddy_bin_dir}
       sucess_or_fail "caddy解压"
